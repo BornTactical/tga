@@ -1,2 +1,2 @@
-# upp-plugin-tga
+# plugin/tga
 TGA plugin for Ultimate++
