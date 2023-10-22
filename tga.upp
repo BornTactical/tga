@@ -1,3 +1,5 @@
+description "TGA image file format\377";
+
 uses
 	Draw;
 
