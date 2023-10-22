@@ -1,0 +1,10 @@
+uses
+	Draw;
+
+file
+	tga.h,
+	tgahdr.h,
+	TgaReg.icpp,
+	Tga.cpp,
+	TgaWrite.cpp;
+
