@@ -1,2 +1,2 @@
 # plugin/tga
-TGA plugin for Ultimate++
+TGA plugin for U++
