@@ -49,13 +49,13 @@ void TGAEncoder::Start(Size sz) {
     };
     
     auto InitColorMapSpec = [&]() -> ColorMapSpec {
-	    if(paletteCount) {
-	        return {
-	            .firstEntry = word(sizeof(TGAHeader) + imageID.GetLength()),
-	            .length     = word(bpp * paletteCount),
-	            .entrySize  = byte(32)
-	        };
-	    }
+        if(paletteCount) {
+            return {
+                .firstEntry = word(sizeof(TGAHeader) + imageID.GetLength()),
+                .length     = word(bpp * paletteCount),
+                .entrySize  = byte(32)
+            };
+        }
         
         return ColorMapSpec {};
     };
@@ -81,10 +81,10 @@ void TGAEncoder::Start(Size sz) {
     stream.Put(&header, sizeof(header));
     
     if(!imageID.IsEmpty())
-		stream.Put(imageID.Begin(), header.idLength);
+        stream.Put(imageID.Begin(), header.idLength);
     
     if(paletteCount) {
-		stream.Put(GetPalette(), sizeof(RGBA) * paletteCount);
+        stream.Put(GetPalette(), sizeof(RGBA) * paletteCount);
     }
     
     soff      = stream.GetPos();
@@ -156,8 +156,8 @@ void WriteRLE(Stream& stream, const T* read, uint32 bytesRemaining) {
 
 void TGAEncoder::WriteLineRaw(const byte *s) {
     auto& stream = GetStream();
-	stream.Seek(soff);
-	
+    stream.Seek(soff);
+    
     if(useRLE) {
         switch(bpp) {
             case 32:
@@ -176,7 +176,7 @@ void TGAEncoder::WriteLineRaw(const byte *s) {
                 return;
         }
         
-	    soff = stream.GetPos();
+        soff = stream.GetPos();
         return;
     }
     
