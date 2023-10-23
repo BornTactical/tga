@@ -3,32 +3,9 @@
 namespace Upp {
 #include "tgahdr.h"
 
-int TGAEncoder::GetPaletteCount() {
-    return 0;
-}
-
 void TGAEncoder::Start(Size sz) {
     LOG(sz);
     auto& stream = GetStream();
-
-    const TGAHeader header {
-        .idLength  = 0,
-        .colorMap  = 0,
-        .imageType = useRLE ? byte(TGA_RLE_TRUE_COLOR) : byte(TGA_UNCOMPRESSED_TRUE_COLOR),
-        .colorMapSpec = {
-            .firstEntry = 0,
-            .length     = 0,
-            .entrySize  = 0
-        },
-        .imageSpec = {
-            .xOrigin    = 0,
-            .yOrigin    = 0,
-            .width      = int16(sz.cx),
-            .height     = int16(sz.cy),
-            .depth      = uint8(bpp),
-            .descriptor = (TGA_TOP_LEFT << 4)
-        }
-    };
     
     switch(bpp) {
         case 32:
@@ -53,17 +30,65 @@ void TGAEncoder::Start(Size sz) {
             break;
     }
     
+    auto paletteCount = GetPaletteCount();
+    
+    auto InitImageType = [&]() -> byte {
+        if(paletteCount) {
+            if(useRLE) return TGA_RLE_COLOR_MAP;
+            return TGA_UNCOMPRESSED_COLOR_MAP;
+        }
+        
+        if(grayscale) {
+            if(useRLE) return TGA_RLE_BLACK_WHITE;
+            return TGA_UNCOMPRESSED_BLACK_WHITE;
+        }
+        
+        if(useRLE) return TGA_RLE_TRUE_COLOR;
+        
+        return TGA_UNCOMPRESSED_TRUE_COLOR;
+    };
+    
+    auto InitColorMapSpec = [&]() -> ColorMapSpec {
+	    if(paletteCount) {
+	        return {
+	            .firstEntry = word(sizeof(TGAHeader) + imageID.GetLength()),
+	            .length     = word(bpp * paletteCount),
+	            .entrySize  = byte(32)
+	        };
+	    }
+        
+        return ColorMapSpec {};
+    };
+    
+    const TGAHeader header {
+        .idLength     = byte(imageID.GetLength()),
+        .colorMap     = byte(paletteCount),
+        .imageType    = InitImageType(),
+        .colorMapSpec = InitColorMapSpec(),
+        .imageSpec = {
+            .xOrigin    = 0,
+            .yOrigin    = 0,
+            .width      = int16(sz.cx),
+            .height     = int16(sz.cy),
+            .depth      = uint8(bpp),
+            .descriptor = (TGA_TOP_LEFT << 4)
+        }
+    };
+    
     row_bytes = format.GetByteCount(sz.cx);
     scanline.Alloc(row_bytes);
+    
     stream.Put(&header, sizeof(header));
     
-    int ncolors = 0;
-    int h = sizeof(header) + header.colorMapSpec.entrySize * ncolors;
+    if(!imageID.IsEmpty())
+		stream.Put(imageID.Begin(), header.idLength);
     
-    soff = stream.GetPos();
+    if(paletteCount) {
+		stream.Put(GetPalette(), sizeof(RGBA) * paletteCount);
+    }
     
-    //stream.SetSize(h + sz.cy * row_bytes);
-    linei = sz.cy;
+    soff      = stream.GetPos();
+    linei     = sz.cy;
     linebytes = format.GetByteCount(sz.cx);
 }
 
@@ -131,10 +156,9 @@ void WriteRLE(Stream& stream, const T* read, uint32 bytesRemaining) {
 
 void TGAEncoder::WriteLineRaw(const byte *s) {
     auto& stream = GetStream();
-
+	stream.Seek(soff);
+	
     if(useRLE) {
-        stream.Seek(soff);
-        
         switch(bpp) {
             case 32:
                 WriteRLE(stream, (RGBA*)s, row_bytes);
@@ -152,15 +176,13 @@ void TGAEncoder::WriteLineRaw(const byte *s) {
                 return;
         }
         
-        linei--;
-        soff = stream.GetPos();
-        
+	    soff = stream.GetPos();
         return;
     }
     
-    stream.Seek(soff + row_bytes * --linei);
     memcpy(scanline, s, linebytes);
     stream.Put(scanline, row_bytes);
+    soff = stream.GetPos();
 }
 }
 

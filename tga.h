@@ -39,6 +39,7 @@ class TGARaster : public StreamRaster {
     Raster::Info     info     {};
     One<ImageRaster> rle      {};
     bool             file     {};
+    String           id       {};
     
 public:
     bool        Create()                              override;
@@ -57,24 +58,26 @@ public:
 bool IsTGA(StreamRaster *s);
 
 class TGAEncoder : public StreamRasterEncoder {
-    int          row_bytes {};
-    int          linei     {};
-    int64        soff      {};
-    Buffer<byte> scanline  {};
-    int          linebytes {};
-    int          bpp       {};
-    bool         grayscale {};
-    bool         useRLE    {};
-    bool         hasAlpha  {};
+    int          row_bytes    {};
+    int          linei        {};
+    int64        soff         {};
+    Buffer<byte> scanline     {};
+    int          linebytes    {};
+    int          bpp          {};
+    bool         grayscale    {};
+    bool         useRLE       {};
+    bool         hasAlpha     {};
+    String       imageID      {};
 
 public:
     TGAEncoder& Bpp(int _bpp)        { bpp       = _bpp; return *this; }
     TGAEncoder& Mono(bool gs = true) { grayscale = gs;   return *this; }
     TGAEncoder& RLE(bool rle = true) { useRLE    = rle;  return *this; }
+    TGAEncoder& Id(String id)        { imageID   = id;   return *this; }
 
     TGAEncoder(int bpp = 32, bool gs = false, bool useRLE = false) : bpp(bpp), grayscale(gs), useRLE(useRLE) {}
     
-    int  GetPaletteCount()           override;
+    //int  GetPaletteCount()           override;
     void Start(Size sz)              override;
     void WriteLineRaw(const byte *s) override;
 };

@@ -91,18 +91,11 @@ bool LoadTGAHeader(Stream& stream, TGAHeader& header, bool file) {
 
     stream.Seek(0);
     
-    if(!stream.GetAll(&header, sizeof(header))) {
+    if(!stream.Get(&header, sizeof(header))) {
         return false;
     }
     
-    if(header.idLength) {
-        Vector<byte> id;
-        id.SetCount(header.idLength);
-        
-        if(!stream.GetAll(&id, header.idLength)) {
-            return false;
-        }
-    }
+
     
     LOG(header);
     
@@ -123,6 +116,10 @@ bool TGARaster::Create() {
     if(!LoadTGAHeader(stream, header, file)) {
         SetError();
         return false;
+    }
+    
+    if(header.idLength) {
+        id = stream.Get(header.idLength);
     }
     
     size.cx = header.imageSpec.width;
